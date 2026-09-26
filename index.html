@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AlugaFácil — Gestão de Imóveis</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#687386;--primary:#1769e0;--primary2:#0e4fb4;--line:#e2e8f0;--ok:#12805c;--warn:#b66a00;--danger:#c0392b}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#0e4fb4,#1769e0);color:#fff;padding:22px 24px;position:sticky;top:0;z-index:5;box-shadow:0 3px 14px #0002}
+header h1{margin:0;font-size:23px} header p{margin:5px 0 0;opacity:.86;font-size:13px}
+nav{display:flex;gap:8px;overflow:auto;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:82px;z-index:4}
+nav button{border:0;background:#eef3fb;color:#234;padding:10px 14px;border-radius:10px;white-space:nowrap;font-weight:600;cursor:pointer}nav button.active{background:var(--primary);color:white}
+main{max-width:1250px;margin:auto;padding:20px}.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 4px 14px #12204008}
+.stat b{font-size:27px;display:block;margin-top:7px}.muted{color:var(--muted);font-size:13px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+button,.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer;background:var(--primary);color:#fff}.btn.secondary{background:#eaf0f8;color:#24364f}.btn.danger{background:#c0392b}.btn.ok{background:#12805c}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ccd5e2;border-radius:9px;background:#fff;font:inherit}textarea{min-height:90px;resize:vertical}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:6px}.field{margin-bottom:13px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}.full{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f5f8fc}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eaf2ff;color:#1753a6;font-size:11px;font-weight:800}.paid{background:#e6f7f0;color:var(--ok)}.late{background:#fff0ee;color:var(--danger)}
+.modal{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;padding:15px;z-index:10}.modal.show{display:flex}.modalbox{background:#fff;border-radius:18px;max-width:850px;width:100%;max-height:92vh;overflow:auto;padding:20px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}.empty{padding:30px;text-align:center;color:var(--muted)}
+.preview{width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-top:8px}.thumb{width:58px;height:45px;object-fit:cover;border-radius:7px}
+@media(max-width:650px){main{padding:12px}.card{padding:14px}nav{top:78px}.formgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>🏠 AlugaFácil</h1><p>Administração de casas, contratos, locatários, pagamentos e documentos</p></header>
+<nav id="nav">
+<button type="button" data-page="dashboard" class="active">Dashboard</button><button type="button" data-page="imoveis">Imóveis</button><button type="button" data-page="locatarios">Locatários</button><button type="button" data-page="recebimentos">Recebimentos</button><button type="button" data-page="documentos">Documentos</button><button type="button" data-page="config">Backup</button>
+</nav>
+<main>
+<section id="dashboard" class="page active">
+<h2>Visão geral</h2><div class="grid">
+<div class="card stat"><span class="muted">Imóveis</span><b id="sImoveis">0</b></div>
+<div class="card stat"><span class="muted">Aluguel mensal previsto</span><b id="sPrevisto">R$ 0,00</b></div>
+<div class="card stat"><span class="muted">A receber</span><b id="sReceber">R$ 0,00</b></div>
+<div class="card stat"><span class="muted">Em atraso</span><b id="sAtrasado">R$ 0,00</b></div>
+</div><br><div class="card"><h3>Próximos recebimentos</h3><div id="upcoming"></div></div>
+</section>
+
+<section id="imoveis" class="page"><div class="toolbar"><button type="button" onclick="openProperty()">+ Novo imóvel</button><input id="searchProp" placeholder="Pesquisar imóvel, endereço ou responsável..." oninput="renderProperties()" style="max-width:360px"></div><div id="properties" class="grid"></div></section>
+
+<section id="locatarios" class="page"><div class="toolbar"><button type="button" onclick="openTenant()">+ Novo locatário</button><input id="searchTenant" placeholder="Pesquisar nome ou documento..." oninput="renderTenants()" style="max-width:360px"></div><div class="card"><div id="tenants"></div></div></section>
+
+<section id="recebimentos" class="page"><div class="toolbar"><button type="button" onclick="openPayment()">+ Registrar recebimento</button><select id="payFilter" onchange="renderPayments()" style="max-width:220px"><option value="">Todos</option><option value="Pago">Pagos</option><option value="Pendente">Pendentes</option><option value="Atrasado">Atrasados</option></select></div><div class="card"><div id="payments"></div></div></section>
+
+<section id="documentos" class="page"><div class="card"><h3>Documentos e arquivos</h3><p class="muted">Os arquivos adicionados ficam guardados no navegador deste dispositivo, junto com os dados do sistema.</p><div id="docs"></div></div></section>
+
+<section id="config" class="page"><div class="grid">
+<div class="card"><h3>Backup</h3><p class="muted">Exporte os dados para um arquivo JSON. Para fotos/PDFs, use o backup completo abaixo.</p><button type="button" onclick="exportBackup()">Exportar backup completo</button></div>
+<div class="card"><h3>Restaurar</h3><p class="muted">Importe um backup feito neste sistema.</p><input type="file" accept=".json" onchange="importBackup(event)"></div>
+<div class="card"><h3>Segurança</h3><p class="muted">Este sistema é local: não envie RG, contratos ou documentos para um servidor. Proteja o aparelho e faça backups.</p></div>
+</div></section>
+</main>
+
+<div id="modal" class="modal"><div class="modalbox" id="modalbox"></div></div>
+<input id="hiddenFile" type="file" style="display:none">
+
+<script>
+const KEY="aluguafacil_v1";
+let db={properties:[],tenants:[],payments:[],docs:[]};
+let fileStore={};
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(db)); return true}
+  catch(e){console.warn("Não foi possível salvar no armazenamento do navegador",e); return false}
+}
+function load(){
+  try{const raw=localStorage.getItem(KEY); if(raw) db=JSON.parse(raw)||db}
+  catch(e){console.warn("Não foi possível ler o armazenamento do navegador",e)}
+  renderAll();
+}
+function money(v){return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(v)||0)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+function showModal(html){document.getElementById("modalbox").innerHTML=html;document.getElementById("modal").classList.add("show")}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(b.dataset.page).classList.add("active");renderAll()});
+
+function openProperty(id=null){
+ let p=db.properties.find(x=>x.id===id)||{id:"",name:"",type:"Casa",address:"",cep:"",neighborhood:"",city:"",rent:"",iptu:"",iptuDue:"",notes:"",tenantId:"",photo:""};
+ showModal(`<h2>${id?"Editar":"Novo"} imóvel</h2><div class="formgrid">
+ <div class="field"><label>Nome do imóvel *</label><input id="pName" value="${esc(p.name)}" placeholder="Ex.: Casa 01"></div>
+ <div class="field"><label>Tipo</label><select id="pType">${["Casa","Apartamento","Sala","Comercial","Outro"].map(x=>`<option ${p.type===x?"selected":""}>${x}</option>`).join("")}</select></div>
+ <div class="field full"><label>Endereço</label><input id="pAddress" value="${esc(p.address)}"></div>
+ <div class="field"><label>CEP</label><input id="pCep" value="${esc(p.cep)}"></div><div class="field"><label>Bairro</label><input id="pNeighborhood" value="${esc(p.neighborhood)}"></div><div class="field"><label>Cidade</label><input id="pCity" value="${esc(p.city)}"></div>
+ <div class="field"><label>Aluguel mensal (R$)</label><input id="pRent" type="number" step=".01" value="${p.rent}"></div><div class="field"><label>IPTU anual (R$)</label><input id="pIptu" type="number" step=".01" value="${p.iptu}"></div><div class="field"><label>Vencimento IPTU</label><input id="pIptuDue" type="date" value="${p.iptuDue}"></div>
+ <div class="field"><label>Responsável/locatário</label><select id="pTenant"><option value="">— Sem locatário —</option>${db.tenants.map(t=>`<option value="${t.id}" ${t.id===p.tenantId?"selected":""}>${esc(t.name)}</option>`).join("")}</select></div>
+ <div class="field full"><label>Foto do imóvel</label><input id="pPhoto" type="file" accept="image/*" onchange="previewPhoto(this)"><div id="photoPreview">${p.photo?`<img class="preview" src="${p.photo}">`:""}</div></div>
+ <div class="field full"><label>Informações/observações</label><textarea id="pNotes">${esc(p.notes)}</textarea></div></div>
+ <div class="actions"><button type="button" onclick="saveProperty('${p.id}')">Salvar imóvel</button><button class="btn secondary" onclick="closeModal()">Cancelar</button></div>`);
+}
+function previewPhoto(inp){let f=inp.files[0];if(!f)return;let r=new FileReader();r.onload=()=>document.getElementById("photoPreview").innerHTML=`<img class="preview" src="${r.result}">`;r.readAsDataURL(f)}
+function saveProperty(id){
+ let old=db.properties.find(x=>x.id===id)||{};
+ let p={id:id||uid(),name:document.getElementById("pName").value.trim(),type:document.getElementById("pType").value,address:document.getElementById("pAddress").value,cep:document.getElementById("pCep").value,neighborhood:document.getElementById("pNeighborhood").value,city:document.getElementById("pCity").value,rent:document.getElementById("pRent").value,iptu:document.getElementById("pIptu").value,iptuDue:document.getElementById("pIptuDue").value,tenantId:document.getElementById("pTenant").value,notes:document.getElementById("pNotes").value,photo:old.photo||""};
+ let f=document.getElementById("pPhoto").files[0]; if(f){let r=new FileReader();r.onload=()=>{p.photo=r.result;finishProp(p)};r.readAsDataURL(f)}else finishProp(p);
+}
+function finishProp(p){if(!p.name){alert("Informe o nome do imóvel.");return}let i=db.properties.findIndex(x=>x.id===p.id);if(i>=0)db.properties[i]=p;else db.properties.push(p);let ok=save();closeModal();renderAll();if(!ok) alert("O imóvel foi cadastrado nesta sessão, mas o navegador não permitiu salvar permanentemente. Abra este arquivo em outro navegador/app ou ative o armazenamento do site.")}
+function deleteProperty(id){if(confirm("Excluir este imóvel? Os recebimentos não serão apagados.")){db.properties=db.properties.filter(x=>x.id!==id);save();renderAll()}}
+
+function openTenant(id=null){
+ let t=db.tenants.find(x=>x.id===id)||{id:"",name:"",cpf:"",rg:"",phone:"",email:"",address:"",notes:""};
+ showModal(`<h2>${id?"Editar":"Novo"} locatário/responsável</h2><div class="formgrid">
+ <div class="field full"><label>Nome completo *</label><input id="tName" value="${esc(t.name)}"></div>
+ <div class="field"><label>CPF</label><input id="tCpf" value="${esc(t.cpf)}"></div><div class="field"><label>RG</label><input id="tRg" value="${esc(t.rg)}"></div><div class="field"><label>Telefone</label><input id="tPhone" value="${esc(t.phone)}"></div><div class="field"><label>E-mail</label><input id="tEmail" value="${esc(t.email)}"></div>
+ <div class="field full"><label>Endereço</label><input id="tAddress" value="${esc(t.address)}"></div><div class="field full"><label>Observações</label><textarea id="tNotes">${esc(t.notes)}</textarea></div></div>
+ <div class="actions"><button type="button" onclick="saveTenant('${t.id}')">Salvar</button><button class="btn secondary" onclick="closeModal()">Cancelar</button></div>`);
+}
+function saveTenant(id){let t={id:id||uid(),name:document.getElementById("tName").value.trim(),cpf:document.getElementById("tCpf").value,rg:document.getElementById("tRg").value,phone:document.getElementById("tPhone").value,email:document.getElementById("tEmail").value,address:document.getElementById("tAddress").value,notes:document.getElementById("tNotes").value};if(!t.name)return alert("Informe o nome.");let i=db.tenants.findIndex(x=>x.id===t.id);if(i>=0)db.tenants[i]=t;else db.tenants.push(t);let ok=save();closeModal();renderAll();if(!ok) alert("O cadastro foi feito nesta sessão, mas o navegador não permitiu salvar permanentemente.")}
+function deleteTenant(id){if(confirm("Excluir este locatário?")){db.tenants=db.tenants.filter(x=>x.id!==id);db.properties.forEach(p=>{if(p.tenantId===id)p.tenantId=""});save();renderAll()}}
+
+function openPayment(id=null){
+ let p=db.payments.find(x=>x.id===id)||{id:"",propertyId:"",tenantId:"",due:"",amount:"",status:"Pendente",paidDate:"",method:"Pix",notes:""};
+ showModal(`<h2>${id?"Editar":"Novo"} recebimento</h2><div class="formgrid">
+ <div class="field"><label>Imóvel *</label><select id="payProp">${db.properties.map(x=>`<option value="${x.id}" ${x.id===p.propertyId?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div>
+ <div class="field"><label>Locatário/responsável</label><select id="payTenant"><option value="">—</option>${db.tenants.map(x=>`<option value="${x.id}" ${x.id===p.tenantId?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div>
+ <div class="field"><label>Vencimento *</label><input id="payDue" type="date" value="${p.due}"></div><div class="field"><label>Valor *</label><input id="payAmount" type="number" step=".01" value="${p.amount}"></div>
+ <div class="field"><label>Status</label><select id="payStatus">${["Pendente","Pago","Atrasado"].map(x=>`<option ${p.status===x?"selected":""}>${x}</option>`).join("")}</select></div>
+ <div class="field"><label>Data do pagamento</label><input id="payDate" type="date" value="${p.paidDate}"></div><div class="field"><label>Forma</label><select id="payMethod">${["Pix","Transferência","Dinheiro","Boleto","Cartão","Outro"].map(x=>`<option ${p.method===x?"selected":""}>${x}</option>`).join("")}</select></div>
+ <div class="field full"><label>Observações</label><textarea id="payNotes">${esc(p.notes)}</textarea></div></div>
+ <div class="actions"><button type="button" onclick="savePayment('${p.id}')">Salvar</button><button class="btn secondary" onclick="closeModal()">Cancelar</button></div>`);
+}
+function savePayment(id){let p={id:id||uid(),propertyId:document.getElementById("payProp").value,tenantId:document.getElementById("payTenant").value,due:document.getElementById("payDue").value,amount:document.getElementById("payAmount").value,status:document.getElementById("payStatus").value,paidDate:document.getElementById("payDate").value,method:document.getElementById("payMethod").value,notes:document.getElementById("payNotes").value};if(!p.propertyId||!p.due)return alert("Informe imóvel e vencimento.");let i=db.payments.findIndex(x=>x.id===p.id);if(i>=0)db.payments[i]=p;else db.payments.push(p);save();closeModal();renderAll()}
+function deletePayment(id){if(confirm("Excluir este recebimento?")){db.payments=db.payments.filter(x=>x.id!==id);save();renderAll()}}
+
+function addDoc(propId){
+ showModal(`<h2>Adicionar documento</h2><div class="field"><label>Imóvel (opcional)</label><select id="dProp"><option value="">— Geral —</option>${db.properties.map(p=>`<option value="${p.id}" ${p.id===propId?"selected":""}>${esc(p.name)}</option>`).join("")}</select></div><div class="field"><label>Tipo</label><select id="dType">${["Contrato de aluguel","RG/Documento","IPTU","Recibo","Vistoria","Foto do imóvel","Outro"].map(x=>`<option>${x}</option>`).join("")}</select></div><div class="field"><label>Arquivo</label><input id="dFile" type="file" accept="image/*,.pdf,.doc,.docx,.txt" ></div><div class="actions"><button type="button" onclick="saveDoc()">Salvar arquivo</button><button class="btn secondary" onclick="closeModal()">Cancelar</button></div>`);
+}
+function saveDoc(){let f=document.getElementById("dFile").files[0];if(!f)return alert("Escolha um arquivo.");let r=new FileReader();r.onload=()=>{db.docs.push({id:uid(),propertyId:document.getElementById("dProp").value,type:document.getElementById("dType").value,name:f.name,mime:f.type,data:r.result,date:new Date().toISOString()});save();closeModal();renderAll()};r.readAsDataURL(f)}
+function deleteDoc(id){if(confirm("Excluir este arquivo?")){db.docs=db.docs.filter(x=>x.id!==id);save();renderAll()}}
+function downloadDoc(id){let d=db.docs.find(x=>x.id===id);if(!d)return;let a=document.createElement("a");a.href=d.data;a.download=d.name;a.click()}
+
+function renderProperties(){let q=(document.getElementById("searchProp")?.value||"").toLowerCase();let a=db.properties.filter(p=>(p.name+" "+p.address+" "+tenantName(p.tenantId)).toLowerCase().includes(q));document.getElementById("properties").innerHTML=a.length?a.map(p=>`<div class="card">${p.photo?`<img class="preview" src="${p.photo}">`:""}<h3>${esc(p.name)}</h3><span class="badge">${esc(p.type)}</span><p>${esc(p.address||"Endereço não informado")}</p><p><b>${money(p.rent)}</b> / mês</p><p class="muted">Responsável: ${esc(tenantName(p.tenantId)||"Não informado")}<br>IPTU: ${money(p.iptu)}</p><p>${esc(p.notes||"")}</p><div class="actions"><button type="button" onclick="openProperty('${p.id}')">Editar</button><button class="btn secondary" onclick="addDoc('${p.id}')">+ Documento</button><button class="btn danger" onclick="deleteProperty('${p.id}')">Excluir</button></div></div>`).join(""):`<div class="card empty">Nenhum imóvel cadastrado. Clique em “+ Novo imóvel”.</div>`}
+function renderTenants(){let q=(document.getElementById("searchTenant")?.value||"").toLowerCase();let a=db.tenants.filter(t=>(t.name+" "+t.cpf+" "+t.rg).toLowerCase().includes(q));document.getElementById("tenants").innerHTML=a.length?`<table><thead><tr><th>Nome</th><th>CPF</th><th>RG</th><th>Telefone</th><th>Imóveis</th><th></th></tr></thead><tbody>${a.map(t=>`<tr><td><b>${esc(t.name)}</b><br><span class="muted">${esc(t.email)}</span></td><td>${esc(t.cpf)}</td><td>${esc(t.rg)}</td><td>${esc(t.phone)}</td><td>${db.properties.filter(p=>p.tenantId===t.id).map(p=>esc(p.name)).join(", ")||"—"}</td><td><div class="actions"><button type="button" onclick="openTenant('${t.id}')">Editar</button><button class="btn danger" onclick="deleteTenant('${t.id}')">Excluir</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nenhum locatário cadastrado.</div>`}
+function renderPayments(){let f=document.getElementById("payFilter")?.value||"";let a=db.payments.filter(p=>!f||p.status===f).sort((a,b)=>a.due.localeCompare(b.due));document.getElementById("payments").innerHTML=a.length?`<table><thead><tr><th>Vencimento</th><th>Imóvel</th><th>Responsável</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>${a.map(p=>`<tr><td>${formatDate(p.due)}</td><td>${esc(propName(p.propertyId))}</td><td>${esc(tenantName(p.tenantId)||"—")}</td><td><b>${money(p.amount)}</b></td><td><span class="badge ${p.status==="Pago"?"paid":p.status==="Atrasado"?"late":""}">${p.status}</span></td><td><div class="actions"><button type="button" onclick="openPayment('${p.id}')">Editar</button><button class="btn danger" onclick="deletePayment('${p.id}')">Excluir</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nenhum recebimento registrado.</div>`}
+function renderDocs(){document.getElementById("docs").innerHTML=`<div class="toolbar"><button type="button" onclick="addDoc()">+ Adicionar documento</button></div>`+(db.docs.length?`<table><thead><tr><th>Arquivo</th><th>Tipo</th><th>Imóvel</th><th>Data</th><th></th></tr></thead><tbody>${db.docs.map(d=>`<tr><td>📎 ${esc(d.name)}</td><td>${esc(d.type)}</td><td>${esc(propName(d.propertyId)||"Geral")}</td><td>${new Date(d.date).toLocaleDateString("pt-BR")}</td><td><div class="actions"><button type="button" onclick="downloadDoc('${d.id}')">Abrir/baixar</button><button class="btn danger" onclick="deleteDoc('${d.id}')">Excluir</button></div></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nenhum documento salvo.</div>`)}
+function renderDash(){let today=new Date().toISOString().slice(0,10);document.getElementById("sImoveis").textContent=db.properties.length;document.getElementById("sPrevisto").textContent=money(db.properties.reduce((s,p)=>s+Number(p.rent||0),0));document.getElementById("sReceber").textContent=money(db.payments.filter(p=>p.status!=="Pago").reduce((s,p)=>s+Number(p.amount||0),0));document.getElementById("sAtrasado").textContent=money(db.payments.filter(p=>p.status==="Atrasado"||p.status!=="Pago"&&p.due<today).reduce((s,p)=>s+Number(p.amount||0),0));let a=db.payments.filter(p=>p.status!=="Pago").sort((a,b)=>a.due.localeCompare(b.due)).slice(0,8);document.getElementById("upcoming").innerHTML=a.length?`<table><tr><th>Data</th><th>Imóvel</th><th>Valor</th><th>Status</th></tr>${a.map(p=>`<tr><td>${formatDate(p.due)}</td><td>${esc(propName(p.propertyId))}</td><td>${money(p.amount)}</td><td>${p.due<today?"⚠️ Atrasado":p.status}</td></tr>`).join("")}</table>`:`<div class="empty">Tudo tranquilo por aqui. Cadastre imóveis e recebimentos.</div>`}
+function tenantName(id){return db.tenants.find(x=>x.id===id)?.name||""}function propName(id){return db.properties.find(x=>x.id===id)?.name||""}function formatDate(x){return x?new Date(x+"T12:00:00").toLocaleDateString("pt-BR"):"—"}
+function renderAll(){renderDash();renderProperties();renderTenants();renderPayments();renderDocs()}
+function exportBackup(){let blob=new Blob([JSON.stringify(db)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="backup-aluguafacil-"+new Date().toISOString().slice(0,10)+".json";a.click()}
+function importBackup(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(x.properties&&x.tenants&&x.payments&&x.docs){db=x;save();renderAll();alert("Backup restaurado com sucesso.")}else alert("Arquivo inválido.")}catch(err){alert("Não foi possível ler o backup.")}};r.readAsText(f)}
+load();
+</script>
+</body></html>
